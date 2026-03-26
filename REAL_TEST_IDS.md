@@ -13,3 +13,4 @@ Verification checklist:
 2. Enter one ID from the list above.
 3. Click **Analyze Ticket**.
 4. Confirm `Data Source` is `github` (if commit is in remote repo) or `local` (if only local commit exists).
+5. If GitHub/Gemini are unavailable, fallback analysis still returns structured sections and a `confidence` hint.

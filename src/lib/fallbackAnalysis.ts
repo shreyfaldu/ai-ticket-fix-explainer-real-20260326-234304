@@ -9,6 +9,7 @@ export type TicketAnalysis = {
   fixApplied: string;
   summary: string;
   issueType?: string;
+  confidence?: string;
 };
 
 function detectIssueType(commitMessage: string, codeDiff: string) {
@@ -42,6 +43,9 @@ export function generateFallbackAnalysis({
     .slice(0, 3)
     .map((line) => line.replace(/^-\s?/, ""));
 
+  const confidence =
+    addedLines.length + removedLines.length >= 4 ? "high" : "medium";
+
   return {
     problem:
       "The ticket addresses a reliability issue observed in production behavior, as described by the commit message.",
@@ -56,5 +60,6 @@ export function generateFallbackAnalysis({
     summary:
       `In short, this ${issueType} update improves stability by replacing brittle behavior with explicit checks and safer control flow.`,
     issueType,
+    confidence,
   };
 }
