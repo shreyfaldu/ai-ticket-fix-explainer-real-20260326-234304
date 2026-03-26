@@ -1,0 +1,3 @@
+Demo ticket proof file.
+Ticket ID: DEMO-777
+Purpose: Verify AI Ticket Fix Explainer local git commit lookup.
