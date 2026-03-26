@@ -204,6 +204,18 @@
   overflow-wrap: anywhere;
 }
 
+.sourceTag {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: #dbeafe;
+  color: #1e3a8a;
+  border: 1px solid #bfdbfe;
+}
+
 .link {
   width: fit-content;
   color: var(--brand);

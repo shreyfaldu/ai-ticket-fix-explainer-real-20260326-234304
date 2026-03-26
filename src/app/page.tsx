@@ -24,7 +24,17 @@ type AnalyzeResponse = {
   analysis: Analysis;
 };
 
-const demoTicketIds = ["OTHK-221", "PAY-902", "CFG-114"];
+const demoTicketIds = [
+  "OTHK-221",
+  "PAY-902",
+  "CFG-114",
+  "REAL-101",
+  "REAL-102",
+  "REAL-103",
+  "REAL-104",
+  "REAL-105",
+  "DEMO-777",
+];
 
 export default function Home() {
   const [ticketId, setTicketId] = useState("OTHK-221");
@@ -130,7 +140,7 @@ export default function Home() {
             </div>
             <div className={styles.metaRow}>
               <span className={styles.metaLabel}>Data Source</span>
-              <span className={styles.metaValue}>{result.ticket.source}</span>
+              <span className={styles.sourceTag}>{result.ticket.source}</span>
             </div>
             <div className={styles.metaRow}>
               <span className={styles.metaLabel}>Commit Message</span>
