@@ -1,5 +1,6 @@
 export type GitHubTicketRecord = {
   ticket_id: string;
+  commit_sha: string;
   ticket_url: string;
   commit_message: string;
   files_changed: string[];
@@ -64,51 +65,15 @@ function makeHeaders(token: string) {
 export async function findGitHubTicketById(
   ticketId: string,
 ): Promise<GitHubTicketRecord | null> {
-  const settings = getGitHubSettings();
-  if (!settings) {
-    return null;
-  }
+  const tickets = await findGitHubTicketsById(ticketId);
+  return tickets[0] ?? null;
+}
 
-  const ticketPattern = ticketId.toUpperCase();
-  const encodedQuery = encodeURIComponent(
-    `${ticketPattern} repo:${settings.owner}/${settings.repo}`,
-  );
-  const searchUrl = `https://api.github.com/search/commits?q=${encodedQuery}&per_page=5`;
-
-  const searchResponse = await fetch(searchUrl, {
-    headers: makeHeaders(settings.token),
-    cache: "no-store",
-  });
-
-  let matchedCommit: GitHubCommitListItem | undefined;
-  if (searchResponse.ok) {
-    const searchPayload =
-      (await searchResponse.json()) as GitHubCommitSearchResponse;
-    matchedCommit = searchPayload.items?.[0];
-  }
-
-  if (!matchedCommit) {
-    const listUrl = `https://api.github.com/repos/${settings.owner}/${settings.repo}/commits?per_page=100`;
-
-    const listResponse = await fetch(listUrl, {
-      headers: makeHeaders(settings.token),
-      cache: "no-store",
-    });
-
-    if (!listResponse.ok) {
-      return null;
-    }
-
-    const commitList = (await listResponse.json()) as GitHubCommitListItem[];
-    matchedCommit = commitList.find((item) =>
-      item.commit.message.toUpperCase().includes(ticketPattern),
-    );
-  }
-
-  if (!matchedCommit) {
-    return null;
-  }
-
+async function buildTicketRecord(
+  ticketId: string,
+  matchedCommit: GitHubCommitListItem,
+  settings: GitHubSettings,
+): Promise<GitHubTicketRecord | null> {
   const detailUrl = `https://api.github.com/repos/${settings.owner}/${settings.repo}/commits/${matchedCommit.sha}`;
   const detailResponse = await fetch(detailUrl, {
     headers: makeHeaders(settings.token),
@@ -127,14 +92,75 @@ export async function findGitHubTicketById(
     return `--- ${file.filename}\n${patch}`;
   });
 
-  const commitMessage = detail.commit.message.split("\n")[0] ?? detail.commit.message;
+  const commitMessage =
+    detail.commit.message.split("\n")[0] ?? detail.commit.message;
 
   return {
     ticket_id: ticketId,
+    commit_sha: matchedCommit.sha,
     ticket_url: detail.html_url || matchedCommit.html_url,
     commit_message: commitMessage,
     files_changed: filesChanged,
     code_diff: diffSections.join("\n\n"),
     source: "github",
   };
+}
+
+export async function findGitHubTicketsById(
+  ticketId: string,
+): Promise<GitHubTicketRecord[]> {
+  const settings = getGitHubSettings();
+  if (!settings) {
+    return [];
+  }
+
+  const ticketPattern = ticketId.toUpperCase();
+  const encodedQuery = encodeURIComponent(
+    `${ticketPattern} repo:${settings.owner}/${settings.repo}`,
+  );
+  const searchUrl = `https://api.github.com/search/commits?q=${encodedQuery}&per_page=5`;
+
+  const searchResponse = await fetch(searchUrl, {
+    headers: makeHeaders(settings.token),
+    cache: "no-store",
+  });
+
+  let matchedCommits: GitHubCommitListItem[] = [];
+  if (searchResponse.ok) {
+    const searchPayload =
+      (await searchResponse.json()) as GitHubCommitSearchResponse;
+    matchedCommits = searchPayload.items ?? [];
+  }
+
+  if (matchedCommits.length === 0) {
+    const listUrl = `https://api.github.com/repos/${settings.owner}/${settings.repo}/commits?per_page=100`;
+
+    const listResponse = await fetch(listUrl, {
+      headers: makeHeaders(settings.token),
+      cache: "no-store",
+    });
+
+    if (!listResponse.ok) {
+      return [];
+    }
+
+    const commitList = (await listResponse.json()) as GitHubCommitListItem[];
+    matchedCommits = commitList.filter((item) =>
+      item.commit.message.toUpperCase().includes(ticketPattern),
+    );
+  }
+
+  if (matchedCommits.length === 0) {
+    return [];
+  }
+
+  const uniqueMatches = Array.from(
+    new Map(matchedCommits.map((item) => [item.sha, item])).values(),
+  ).slice(0, 8);
+
+  const resolvedTickets = await Promise.all(
+    uniqueMatches.map((commit) => buildTicketRecord(ticketId, commit, settings)),
+  );
+
+  return resolvedTickets.filter((ticket) => ticket !== null);
 }

@@ -158,6 +158,26 @@
   font-weight: 600;
 }
 
+.selectWrap {
+  display: grid;
+  gap: 6px;
+}
+
+.select {
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  padding: 10px 12px;
+  font-family: var(--font-ibm-plex-mono), "Courier New", monospace;
+  font-size: 13px;
+}
+
+.select:focus {
+  outline: 2px solid #bfdbfe;
+  border-color: #93c5fd;
+}
+
 .resultGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

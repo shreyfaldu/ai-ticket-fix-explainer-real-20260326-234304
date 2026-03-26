@@ -1,13 +1,22 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useMemo, useState } from "react";
 import styles from "./page.module.css";
 
 type Ticket = {
   ticket_id: string;
+  commit_sha: string;
   ticket_url: string;
   commit_message: string;
   files_changed: string[];
+  source: "github" | "local" | "mock";
+};
+
+type TicketMatch = {
+  ticket_id: string;
+  commit_sha: string;
+  ticket_url: string;
+  commit_message: string;
   source: "github" | "local" | "mock";
 };
 
@@ -21,6 +30,7 @@ type Analysis = {
 
 type AnalyzeResponse = {
   ticket: Ticket;
+  matches: TicketMatch[];
   analysis: Analysis;
 };
 
@@ -39,22 +49,15 @@ const demoTicketIds = [
 export default function Home() {
   const [ticketId, setTicketId] = useState("OTHK-221");
   const [result, setResult] = useState<AnalyzeResponse | null>(null);
+  const [selectedTicketUrl, setSelectedTicketUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const normalizedId = useMemo(() => ticketId.trim().toUpperCase(), [ticketId]);
 
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!normalizedId) {
-      setError("Please enter a ticket ID.");
-      setResult(null);
-      return;
-    }
-
+  async function analyzeTicket(selectedUrl?: string) {
     setLoading(true);
     setError(null);
-    setResult(null);
 
     try {
       const response = await fetch("/api/analyze", {
@@ -62,7 +65,10 @@ export default function Home() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ ticketId: normalizedId }),
+        body: JSON.stringify({
+          ticketId: normalizedId,
+          selectedTicketUrl: selectedUrl,
+        }),
       });
 
       const data = await response.json();
@@ -72,12 +78,33 @@ export default function Home() {
         return;
       }
 
-      setResult(data as AnalyzeResponse);
+      const nextResult = data as AnalyzeResponse;
+      setResult(nextResult);
+      setSelectedTicketUrl(nextResult.ticket.ticket_url);
     } catch {
       setError("Network error while analyzing ticket. Please try again.");
     } finally {
       setLoading(false);
     }
+  }
+
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!normalizedId) {
+      setError("Please enter a ticket ID.");
+      setResult(null);
+      return;
+    }
+
+    setResult(null);
+    setSelectedTicketUrl(null);
+    await analyzeTicket();
+  }
+
+  async function onCommitSelectionChange(event: ChangeEvent<HTMLSelectElement>) {
+    const selectedUrl = event.target.value;
+    setSelectedTicketUrl(selectedUrl);
+    await analyzeTicket(selectedUrl);
   }
 
   return (
@@ -117,6 +144,27 @@ export default function Home() {
         </div>
 
         {error ? <p className={styles.error}>{error}</p> : null}
+
+        {result && result.matches.length > 1 ? (
+          <div className={styles.selectWrap}>
+            <label htmlFor="commit-select" className={styles.metaLabel}>
+              Matching Commits ({result.matches.length})
+            </label>
+            <select
+              id="commit-select"
+              className={styles.select}
+              value={selectedTicketUrl ?? result.ticket.ticket_url}
+              onChange={onCommitSelectionChange}
+              disabled={loading}
+            >
+              {result.matches.map((match) => (
+                <option key={match.ticket_url} value={match.ticket_url}>
+                  [{match.source}] {match.commit_sha.slice(0, 7)} - {match.commit_message}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : null}
       </section>
 
       {result ? (
@@ -126,6 +174,10 @@ export default function Home() {
             <div className={styles.metaRow}>
               <span className={styles.metaLabel}>Ticket ID</span>
               <span className={styles.metaValue}>{result.ticket.ticket_id}</span>
+            </div>
+            <div className={styles.metaRow}>
+              <span className={styles.metaLabel}>Commit SHA</span>
+              <span className={styles.metaValue}>{result.ticket.commit_sha}</span>
             </div>
             <div className={styles.metaRow}>
               <span className={styles.metaLabel}>Ticket URL</span>

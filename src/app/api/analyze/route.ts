@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { findTicketById } from "@/data/mockTickets";
-import { findGitHubTicketById } from "@/lib/githubTickets";
-import { findLocalGitTicketById } from "@/lib/localGitTickets";
+import { findGitHubTicketsById } from "@/lib/githubTickets";
+import { findLocalGitTicketsById } from "@/lib/localGitTickets";
 import {
   generateFallbackAnalysis,
   type TicketAnalysis,
@@ -101,8 +101,12 @@ async function analyzeWithGemini(prompt: string) {
 }
 
 export async function POST(request: NextRequest) {
-  const body = (await request.json()) as { ticketId?: string };
+  const body = (await request.json()) as {
+    ticketId?: string;
+    selectedTicketUrl?: string;
+  };
   const ticketId = body.ticketId?.trim().toUpperCase();
+  const selectedTicketUrl = body.selectedTicketUrl?.trim();
 
   if (!ticketId) {
     return NextResponse.json(
@@ -111,9 +115,20 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const githubTicket = await findGitHubTicketById(ticketId);
-  const localTicket = githubTicket ? null : await findLocalGitTicketById(ticketId);
-  const ticket = githubTicket ?? localTicket ?? findTicketById(ticketId);
+  const githubTickets = await findGitHubTicketsById(ticketId);
+  const localTickets =
+    githubTickets.length > 0 ? [] : await findLocalGitTicketsById(ticketId);
+  const mockTicket = findTicketById(ticketId);
+
+  const matches = [
+    ...githubTickets,
+    ...localTickets,
+    ...(mockTicket ? [mockTicket] : []),
+  ];
+
+  const ticket =
+    matches.find((entry) => entry.ticket_url === selectedTicketUrl) ??
+    matches[0];
 
   if (!ticket) {
     return NextResponse.json(
@@ -137,11 +152,19 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({
     ticket: {
       ticket_id: ticket.ticket_id,
+      commit_sha: "commit_sha" in ticket ? ticket.commit_sha : "mock",
       ticket_url: ticket.ticket_url,
       commit_message: ticket.commit_message,
       files_changed: ticket.files_changed,
       source: "source" in ticket ? ticket.source : "mock",
     },
+    matches: matches.map((entry) => ({
+      ticket_id: entry.ticket_id,
+      commit_sha: "commit_sha" in entry ? entry.commit_sha : "mock",
+      ticket_url: entry.ticket_url,
+      commit_message: entry.commit_message,
+      source: "source" in entry ? entry.source : "mock",
+    })),
     analysis,
   });
 }
