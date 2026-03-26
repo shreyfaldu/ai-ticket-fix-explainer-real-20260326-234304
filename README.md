@@ -23,6 +23,8 @@ The app lets you enter a ticket ID (for example, `OTHK-221`) and get a structure
 - `OTHK-221`
 - `PAY-902`
 - `CFG-114`
+- `REAL-103`
+- `REAL-104`
 
 ## Run Locally
 

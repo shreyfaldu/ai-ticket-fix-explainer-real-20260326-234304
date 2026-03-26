@@ -50,6 +50,36 @@ export const mockTickets: TicketRecord[] = [
 @@
 + "mail": { "sender": "support@company.com" }`,
   },
+  {
+    ticket_id: "REAL-103",
+    ticket_url: "https://jira.example.com/REAL-103",
+    commit_message: "Fix: prevent profile page crash on null avatar",
+    files_changed: ["src/ui/profile.tsx", "src/lib/avatar.ts"],
+    code_diff: `- const avatar = user.avatar.url;
+- return <img src={avatar} alt={user.name} />;
++ const avatar = user.avatar?.url ?? '/images/avatar-default.png';
++ return <img src={avatar} alt={user.name} loading='lazy' />;
+@@
+- export function normalizeAvatar(url: string) { return url.trim(); }
++ export function normalizeAvatar(url?: string) {
++   return (url ?? '').trim() || '/images/avatar-default.png';
++ }`,
+  },
+  {
+    ticket_id: "REAL-104",
+    ticket_url: "https://jira.example.com/REAL-104",
+    commit_message: "Feature: add retry guard for webhook processor",
+    files_changed: ["src/services/webhook.ts", "src/config/retry.ts"],
+    code_diff: `- await processWebhook(event);
++ const maxAttempts = retryConfig.webhookMaxAttempts ?? 3;
++ if (event.attempt > maxAttempts) {
++   return { skipped: true, reason: 'attempt-limit-reached' };
++ }
++ await processWebhook(event);
+@@
+- export const retryConfig = {};
++ export const retryConfig = { webhookMaxAttempts: 3 };`,
+  },
 ];
 
 export function findTicketById(ticketId: string) {
