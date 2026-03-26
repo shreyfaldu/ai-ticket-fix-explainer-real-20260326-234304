@@ -75,6 +75,8 @@ How lookup works:
 4. If it shows `github`, the app is reading real GitHub commit data.
 5. If it shows `mock`, either env vars are missing/invalid or no commit matched that ticket ID.
 
+For quick testing IDs, see `REAL_TEST_IDS.md`.
+
 ## Tech
 
 - Next.js (App Router, TypeScript)
