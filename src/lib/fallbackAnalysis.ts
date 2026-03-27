@@ -10,6 +10,7 @@ export type TicketAnalysis = {
   summary: string;
   issueType?: string;
   confidence?: string;
+  fixHighlights?: string[];
 };
 
 function detectIssueType(commitMessage: string, codeDiff: string) {
@@ -61,5 +62,6 @@ export function generateFallbackAnalysis({
       `In short, this ${issueType} update improves stability by replacing brittle behavior with explicit checks and safer control flow.`,
     issueType,
     confidence,
+    fixHighlights: addedLines,
   };
 }

@@ -26,6 +26,7 @@ type Analysis = {
   fixApplied: string;
   summary: string;
   issueType?: string;
+  fixHighlights?: string[];
 };
 
 type AnalyzeResponse = {
@@ -110,7 +111,10 @@ export default function Home() {
   return (
     <main className={styles.page}>
       <section className={styles.heroCard}>
-        <p className={styles.kicker}>Hackathon Demo</p>
+        <div className={styles.topline}>
+          <p className={styles.kicker}>AI Hackathon Console</p>
+          <span className={styles.livePill}>Live Analysis</span>
+        </div>
         <h1>AI Ticket Fix Explainer</h1>
         <p className={styles.subtitle}>
           Enter a ticket ID and instantly understand what was fixed, where, and
@@ -169,7 +173,7 @@ export default function Home() {
 
       {result ? (
         <section className={styles.resultGrid}>
-          <article className={styles.card}>
+          <article className={`${styles.card} ${styles.detailsCard}`}>
             <h2>Ticket Details</h2>
             <div className={styles.metaRow}>
               <span className={styles.metaLabel}>Ticket ID</span>
@@ -209,27 +213,38 @@ export default function Home() {
           </article>
 
           <article className={styles.card}>
-            <h3>🧠 Problem</h3>
+            <h3>Problem</h3>
             <p>{result.analysis.problem}</p>
           </article>
 
           <article className={styles.card}>
-            <h3>⚠️ Root Cause</h3>
+            <h3>Root Cause</h3>
             <p>{result.analysis.rootCause}</p>
           </article>
 
           <article className={styles.card}>
-            <h3>🔧 Fix Applied</h3>
+            <h3>Fix Applied</h3>
             <p>{result.analysis.fixApplied}</p>
+            {result.analysis.fixHighlights &&
+            result.analysis.fixHighlights.length > 0 ? (
+              <div className={styles.fixEvidenceBox}>
+                <h4>What We Actually Changed</h4>
+                <ul className={styles.fixEvidenceList}>
+                  {result.analysis.fixHighlights.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
           </article>
 
           <article className={styles.card}>
-            <h3>📝 Summary</h3>
+            <h3>Summary</h3>
             <p>{result.analysis.summary}</p>
           </article>
 
           <article className={styles.card}>
-            <h3>📁 Files Changed</h3>
+            <h3>Files Changed</h3>
             <ul className={styles.fileList}>
               {result.ticket.files_changed.map((file) => (
                 <li key={file}>{file}</li>

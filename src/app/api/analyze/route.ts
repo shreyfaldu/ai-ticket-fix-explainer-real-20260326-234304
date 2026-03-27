@@ -26,7 +26,43 @@ Return:
 * Problem Description
 * Root Cause
 * Fix Explanation
-* Summary`;
+* Summary
+* Fix Highlights (3-6 bullet points with concrete code-level changes)`;
+
+function extractAddedLineHighlights(codeDiff: string) {
+  return codeDiff
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(
+      (line) =>
+        line.startsWith("+") &&
+        !line.startsWith("+++") &&
+        line.length > 3 &&
+        !line.startsWith("+@@"),
+    )
+    .map((line) => line.replace(/^\+\s?/, ""))
+    .slice(0, 6);
+}
+
+function normalizeAnalysis(
+  analysis: TicketAnalysis | null,
+  codeDiff: string,
+): TicketAnalysis | null {
+  if (!analysis) {
+    return null;
+  }
+
+  const fallbackHighlights = extractAddedLineHighlights(codeDiff);
+  const fixHighlights =
+    analysis.fixHighlights && analysis.fixHighlights.length > 0
+      ? analysis.fixHighlights.slice(0, 6)
+      : fallbackHighlights;
+
+  return {
+    ...analysis,
+    fixHighlights,
+  };
+}
 
 function extractJsonObject(text: string) {
   const match = text.match(/\{[\s\S]*\}/);
@@ -50,7 +86,8 @@ ${commitMessage}
 Code Diff:
 ${codeDiff}`;
 
-  return analyzeWithGemini(prompt);
+  const result = await analyzeWithGemini(prompt);
+  return normalizeAnalysis(result, codeDiff);
 }
 
 async function analyzeWithGemini(prompt: string) {
@@ -78,7 +115,8 @@ async function analyzeWithGemini(prompt: string) {
           parts: [
             {
               text:
-                "Return valid JSON only with keys: problem, rootCause, fixApplied, summary, issueType.\n\n" +
+                "Return valid JSON only with keys: problem, rootCause, fixApplied, summary, issueType, fixHighlights. " +
+                "`fixApplied` must clearly state what was changed in code, and `fixHighlights` must be an array of concise concrete changes taken from diff lines.\n\n" +
                 prompt,
             },
           ],
