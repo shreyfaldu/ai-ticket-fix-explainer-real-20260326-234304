@@ -1,15 +1,15 @@
 :root {
-  --bg: #f7f9fc;
-  --surface: #ffffff;
-  --surface-soft: #f0f4fb;
-  --text: #0f172a;
-  --text-muted: #475569;
-  --brand: #1d4ed8;
-  --brand-strong: #1e40af;
-  --danger: #b91c1c;
-  --ok: #065f46;
-  --border: #dbe5f2;
-  --shadow: 0 14px 35px rgba(15, 23, 42, 0.12);
+  --bg: #070b14;
+  --surface: #101828;
+  --surface-soft: #142036;
+  --text: #e6efff;
+  --text-muted: #9db0d0;
+  --brand: #3e8bff;
+  --brand-strong: #2563eb;
+  --danger: #ff8f8f;
+  --ok: #86e3ba;
+  --border: #283853;
+  --shadow: 0 14px 35px rgba(0, 0, 0, 0.45);
 }
 
 html {
@@ -28,9 +28,9 @@ body {
   flex-direction: column;
   color: var(--text);
   background:
-    radial-gradient(circle at 15% 20%, #e0ecff 0%, transparent 35%),
-    radial-gradient(circle at 80% 15%, #d8f6ee 0%, transparent 42%),
-    linear-gradient(180deg, #f8fbff 0%, #eef3fb 100%);
+    radial-gradient(circle at 15% 10%, #12203d 0%, transparent 35%),
+    radial-gradient(circle at 85% 15%, #133229 0%, transparent 36%),
+    linear-gradient(180deg, #070b14 0%, #0a1220 100%);
   font-family: var(--font-space-grotesk), "Trebuchet MS", "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
